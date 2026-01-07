@@ -1,8 +1,8 @@
 package com.example.geoil_geoguessrisraellearner;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -18,18 +18,12 @@ public class MainActivity extends AppCompatActivity {
         loginButton = findViewById(R.id.loginButton);
         guestButton = findViewById(R.id.guestButton);
 
-        loginButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this, LoginActivity.class));
-            }
-        });
+        // Apply palette colors immediately
+        loginButton.setBackgroundTintList(ColorStateList.valueOf(getColor(R.color.primary)));
+        guestButton.setBackgroundTintList(ColorStateList.valueOf(getColor(R.color.secondary)));
 
-        guestButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this, GameActivity.class));
-            }
-        });
+        // Set click actions
+        loginButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, LoginActivity.class)));
+        guestButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, GameActivity.class)));
     }
 }
