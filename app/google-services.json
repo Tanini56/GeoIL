@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "301661455970",
+    "project_id": "zivbase-bbcb4",
+    "storage_bucket": "zivbase-bbcb4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:301661455970:android:9df669f1f9b6fd89f7733b",
+        "android_client_info": {
+          "package_name": "com.example.geoil_geoguessrisraellearner"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "301661455970-ee0jjkdqbgudtqioaivtdv9a7fdi7uuo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.geoil_geoguessrisraellearner",
+            "certificate_hash": "0b70ce6f57c619ce1d98776ba15359eaf601f612"
+          }
+        },
+        {
+          "client_id": "301661455970-kph668bmnhgffaj66e9blvqlmm3520gu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1GrTJHBUXofAa-GNDfLYBJU_azy-jaLU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "301661455970-kph668bmnhgffaj66e9blvqlmm3520gu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
