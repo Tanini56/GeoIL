@@ -46,6 +46,7 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+
         // Initialize Firebase
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
@@ -206,7 +207,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void navigateToMain() {
-        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+        Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
         startActivity(intent);
         finish();
     }

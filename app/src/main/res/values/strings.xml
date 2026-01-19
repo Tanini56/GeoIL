@@ -3,4 +3,6 @@
     <string name="title_activity_maps">MapsActivity</string>
     <string name="title_activity_maps2">MapsActivity2</string>
     <string name="default_web_client_id">301661455970-kph668bmnhgffaj66e9blvqlmm3520gu.apps.googleusercontent.com</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

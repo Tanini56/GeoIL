@@ -49,6 +49,7 @@
             android:fontFamily="@font/geofont"/>
     </LinearLayout>
 
+
     <!-- Email Input -->
     <EditText
         android:id="@+id/emailInput"

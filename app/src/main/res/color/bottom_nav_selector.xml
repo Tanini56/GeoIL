@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Selected tab color -->
+    <item android:color="@color/accent_strong" android:state_checked="true"/>
+
+    <!-- Unselected tab color -->
+    <item android:color="@color/secondary"/>
+
+</selector>
