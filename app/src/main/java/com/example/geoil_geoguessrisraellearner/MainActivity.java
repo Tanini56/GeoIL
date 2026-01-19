@@ -15,6 +15,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
         loginButton = findViewById(R.id.loginButton);
         guestButton = findViewById(R.id.guestButton);
 
@@ -24,6 +25,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Set click actions
         loginButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, LoginActivity.class)));
-        guestButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, GameActivity.class)));
+        guestButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, HomeActivity.class)));
     }
 }
