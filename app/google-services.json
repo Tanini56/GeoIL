@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "301661455970-ee0jjkdqbgudtqioaivtdv9a7fdi7uuo.apps.googleusercontent.com",
+          "client_id": "301661455970-9sma3c15s34b1r7la0e835qh9qagv1ka.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.geoil_geoguessrisraellearner",
-            "certificate_hash": "0b70ce6f57c619ce1d98776ba15359eaf601f612"
+            "certificate_hash": "997dabde923e0bcfc67afd666c80657b3785a952"
           }
         },
         {

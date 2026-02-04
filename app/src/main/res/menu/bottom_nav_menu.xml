@@ -3,27 +3,27 @@
 
     <item
         android:id="@+id/nav_account"
-        android:icon="@drawable/placeholder"
+        android:icon="@drawable/account"
         android:title="Account" />
 
     <item
         android:id="@+id/nav_learn"
-        android:icon="@drawable/placeholder"
+        android:icon="@drawable/learn"
         android:title="Learn" />
 
     <item
         android:id="@+id/nav_home"
-        android:icon="@drawable/placeholder"
+        android:icon="@drawable/home"
         android:title="Home" />
 
     <item
         android:id="@+id/nav_challenges"
-        android:icon="@drawable/placeholder"
+        android:icon="@drawable/challenges"
         android:title="Challenges" />
 
     <item
         android:id="@+id/nav_leaderboard"
-        android:icon="@drawable/placeholder"
+        android:icon="@drawable/leaderboard"
         android:title="Leaderboard" />
 
 </menu>

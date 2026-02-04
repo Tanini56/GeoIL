@@ -3,6 +3,7 @@ package com.example.geoil_geoguessrisraellearner;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -20,6 +21,7 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -34,7 +36,7 @@ public class LoginActivity extends AppCompatActivity {
     // UI Elements
     TextView titleText;
     Button loginToggle, signupToggle, actionButton, googleBtn;
-    EditText emailInput, passwordInput, confirmPasswordInput;
+    EditText emailInput, passwordInput, confirmPasswordInput, usernameInput;
 
     // Firebase & Google
     private FirebaseAuth mAuth;
@@ -45,7 +47,6 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-
 
         // Initialize Firebase
         mAuth = FirebaseAuth.getInstance();
@@ -68,15 +69,15 @@ public class LoginActivity extends AppCompatActivity {
         emailInput = findViewById(R.id.emailInput);
         passwordInput = findViewById(R.id.passwordInput);
         confirmPasswordInput = findViewById(R.id.confirmPasswordInput);
+        usernameInput = findViewById(R.id.usernameInput); // New field
 
         // Initialize toggle colors on first load
         initializeUIColors();
 
-        // Click listeners for toggling modes
+        // Click listeners
         loginToggle.setOnClickListener(v -> switchMode(true));
         signupToggle.setOnClickListener(v -> switchMode(false));
 
-        // Main action button listener (Email/Password)
         actionButton.setOnClickListener(v -> {
             String email = emailInput.getText().toString().trim();
             String password = passwordInput.getText().toString().trim();
@@ -93,7 +94,6 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
-        // Google Sign-In button listener
         googleBtn.setOnClickListener(v -> {
             Intent signInIntent = mGoogleSignInClient.getSignInIntent();
             startActivityForResult(signInIntent, RC_SIGN_IN);
@@ -114,7 +114,6 @@ public class LoginActivity extends AppCompatActivity {
         actionButton.setTextColor(white);
     }
 
-    // Handle Google Sign-In Result
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -125,7 +124,8 @@ public class LoginActivity extends AppCompatActivity {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
                 firebaseAuthWithGoogle(account.getIdToken());
             } catch (ApiException e) {
-                Toast.makeText(this, "Google Sign-In Failed", Toast.LENGTH_SHORT).show();
+                Log.e("GoogleSignIn", "Failed: " + e.getStatusCode());
+                Toast.makeText(this, "Google Sign-In Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -135,10 +135,11 @@ public class LoginActivity extends AppCompatActivity {
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
+                        FirebaseUser user = mAuth.getCurrentUser();
                         // Check if user is new to create Firestore profile
                         boolean isNew = task.getResult().getAdditionalUserInfo().isNewUser();
-                        if (isNew) {
-                            saveUserToFirestore(mAuth.getCurrentUser().getEmail());
+                        if (isNew && user != null) {
+                            saveUserToFirestore(user.getEmail(), user.getDisplayName());
                         } else {
                             Toast.makeText(this, "Welcome back!", Toast.LENGTH_SHORT).show();
                             navigateToMain();
@@ -150,7 +151,13 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void handleSignup(String email, String password) {
+        String username = usernameInput.getText().toString().trim();
         String confirmPass = confirmPasswordInput.getText().toString().trim();
+
+        if (username.isEmpty()) {
+            Toast.makeText(this, "Please enter a username", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         if (!password.equals(confirmPass)) {
             Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show();
@@ -165,7 +172,7 @@ public class LoginActivity extends AppCompatActivity {
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        saveUserToFirestore(email);
+                        saveUserToFirestore(email, username);
                     } else {
                         Toast.makeText(this, "Signup Failed: " + task.getException().getMessage(),
                                 Toast.LENGTH_LONG).show();
@@ -173,12 +180,13 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
-    private void saveUserToFirestore(String email) {
+    private void saveUserToFirestore(String email, String username) {
         if (mAuth.getCurrentUser() == null) return;
         String userId = mAuth.getCurrentUser().getUid();
 
         Map<String, Object> user = new HashMap<>();
         user.put("email", email);
+        user.put("username", username);
         user.put("score", 0);
         user.put("createdAt", System.currentTimeMillis());
 
@@ -223,7 +231,8 @@ public class LoginActivity extends AppCompatActivity {
             loginToggle.setTextColor(whiteColor);
             signupToggle.setTextColor(primaryColor);
 
-            titleText.setText("Log In");
+            titleText.setText("");
+            usernameInput.setVisibility(View.GONE);
             confirmPasswordInput.setVisibility(View.GONE);
             actionButton.setText("Log In");
         } else {
@@ -232,7 +241,8 @@ public class LoginActivity extends AppCompatActivity {
             signupToggle.setTextColor(whiteColor);
             loginToggle.setTextColor(primaryColor);
 
-            titleText.setText("Sign Up");
+            titleText.setText("");
+            usernameInput.setVisibility(View.VISIBLE);
             confirmPasswordInput.setVisibility(View.VISIBLE);
             actionButton.setText("Sign Up");
         }
