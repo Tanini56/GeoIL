@@ -1,45 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/map_fragment"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
+    <ImageView
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:src="@drawable/back3"
+        android:scaleType="centerCrop" />
+
+    <FrameLayout
+        android:id="@+id/map_wrapper"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="50dp"
+        android:layout_marginBottom="25dp">
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/map_card"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:cardCornerRadius="28dp"
+            app:cardElevation="8dp"> <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/map_fragment"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+        </androidx.cardview.widget.CardView>
+
+        <Button
+            android:id="@+id/btn_toggle_blue_lines"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hide StreetView"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="30dp"
+            android:elevation="20dp"
+            android:stateListAnimator="@null"
+            android:backgroundTint="#21897E"
+            android:textColor="@color/white"
+            android:textSize="12sp" />
+    </FrameLayout>
 
     <FrameLayout
         android:id="@+id/streetview_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="gone">
+        android:visibility="gone"
+        android:background="@color/black">
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/streetview_fragment"
             android:name="com.google.android.gms.maps.SupportStreetViewPanoramaFragment"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
+
+        <Button
+            android:id="@+id/btn_back_to_map"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="← BACK TO MAP"
+            android:layout_margin="20dp"
+            android:elevation="10dp"
+            android:backgroundTint="@color/primary"
+            android:textColor="@color/white" />
     </FrameLayout>
-
-    <Button
-        android:id="@+id/btn_back_to_map"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="← BACK TO MAP"
-        android:backgroundTint="@color/primary"
-        android:textColor="@color/white"
-        android:layout_gravity="top|start"
-        android:layout_margin="16dp"
-        android:visibility="gone" />
-
-    <Button
-        android:id="@+id/btn_toggle_blue_lines"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hide Blue Lines"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="24dp"
-        android:backgroundTint="@color/primary"
-        android:textColor="@color/white" />
 </FrameLayout>
