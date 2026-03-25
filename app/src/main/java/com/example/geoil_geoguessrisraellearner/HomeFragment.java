@@ -90,33 +90,45 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, OnStre
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mGoogleMap = googleMap;
+
+        // 1. Set Map Type and Position
+        mGoogleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(ISRAEL_CENTER, 7.5f));
 
-        // Create the StreetView Coverage Layer (Blue Lines)
-        UrlTileProvider provider = new UrlTileProvider(256, 256) {
-            @Override
-            public URL getTileUrl(int x, int y, int zoom) {
-                // Use mt0 or mt1, and ensure the parameters are exactly as Google expects
-                String s = "https://mt0.google.com/vt/lyrs=svv&x=" + x + "&y=" + y + "&z=" + zoom;
-                try {
-                    return new URL(s);
-                } catch (MalformedURLException e) {
-                    return null;
+        // 2. Define the Street View Tile Provider (The Blue Lines)
+            UrlTileProvider blueLineProvider = new UrlTileProvider(256, 256) {
+                @Override
+                public synchronized URL getTileUrl(int x, int y, int zoom) {
+                    // This specific URL is the current 2026 endpoint for Street View Coverage
+                    String s = String.format(
+                            "https://mts1.google.com/vt?hl=en-US&lyrs=svv|cb_client:apiv3&style=50&x=%d&y=%d&z=%d",
+                            x, y, zoom
+                    );
+                    try {
+                        return new URL(s);
+                    } catch (MalformedURLException e) {
+                        return null;
+                    }
                 }
-            }
-        };
+            };
 
+
+        // 3. Add the Overlay
         blueLinesOverlay = mGoogleMap.addTileOverlay(new TileOverlayOptions()
-                .tileProvider(provider)
-                .zIndex(100)
-                .visible(isBlueLinesVisible));
+                .tileProvider(blueLineProvider)
+                .zIndex(100) // High enough to stay above the base map
+                .visible(isBlueLinesVisible)
+                .fadeIn(true));
 
+        // 4. Click Listener to Launch Street View
         mGoogleMap.setOnMapClickListener(latLng -> {
+            // Toggle visibility to show the Street View Container
+            mapWrapper.setVisibility(View.GONE);
+            streetViewContainer.setVisibility(View.VISIBLE);
+
             if (mStreetView != null) {
-                // Search for panorama within 250m radius for better accuracy
-                mStreetView.setPosition(latLng, 250, StreetViewSource.DEFAULT);
-                mapWrapper.setVisibility(View.GONE);
-                streetViewContainer.setVisibility(View.VISIBLE);
+                // Search radius of 50 meters is usually standard for "snapping" to a line
+                mStreetView.setPosition(latLng, 50, StreetViewSource.OUTDOOR);
             }
         });
     }
