@@ -13,11 +13,14 @@ import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class ChallengesFragment extends Fragment {
@@ -29,13 +32,15 @@ public class ChallengesFragment extends Fragment {
     private SearchView searchView;
 
     private CommunityMapAdapter adapter;
-
     private List<CommunityMap> mapList;
+    private FirebaseFirestore db;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_challenges, container, false);
+
+        db = FirebaseFirestore.getInstance();
 
         // 1. Initialize Views
         challengesContentView = view.findViewById(R.id.challenges_content_view);
@@ -43,7 +48,6 @@ public class ChallengesFragment extends Fragment {
         containerOfficial = view.findViewById(R.id.container_official);
         containerCommunity = view.findViewById(R.id.container_community);
         guestLoginBtn = view.findViewById(R.id.guest_login_btn);
-
         btnCreateMap = view.findViewById(R.id.btn_create_map);
         rvCommunityMaps = view.findViewById(R.id.rv_community_maps);
         searchView = view.findViewById(R.id.search_view_community);
@@ -68,6 +72,7 @@ public class ChallengesFragment extends Fragment {
                 } else if (checkedId == R.id.btn_community) {
                     containerOfficial.setVisibility(View.GONE);
                     containerCommunity.setVisibility(View.VISIBLE);
+                    fetchCommunityMaps(); // Fetch fresh data when switching tabs
                 }
             }
         });
@@ -78,7 +83,7 @@ public class ChallengesFragment extends Fragment {
             getActivity().finish();
         });
 
-        view.findViewById(R.id.btn_create_map).setOnClickListener(v -> {
+        btnCreateMap.setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), MapCreatorActivity.class);
             startActivity(intent);
         });
@@ -88,29 +93,46 @@ public class ChallengesFragment extends Fragment {
 
     private void setupCommunityList() {
         mapList = new ArrayList<>();
-        // Mock data for testing (Replace with Firebase fetch later)
-        // Now passing both the category "City" AND the current time
-        mapList.add(new CommunityMap("Haifa Secrets", "Nizar123", "City", System.currentTimeMillis()));
-
-        // Sort by Newest (Timestamp descending)
-        Collections.sort(mapList, (m1, m2) -> Long.compare(m2.getTimestamp(), m1.getTimestamp()));
-
         rvCommunityMaps.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new CommunityMapAdapter(getContext(), mapList, map -> {
-            // This code runs when a map is clicked
-            // For now, let's just toast the name. Later, you'll start the game here.
-            Toast.makeText(getContext(), "Starting: " + map.getMapName(), Toast.LENGTH_SHORT).show();
-        });
-        rvCommunityMaps.setAdapter(adapter);
 
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) { return false; }
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                // adapter.getFilter().filter(newText);
-                return true;
-            }
+        adapter = new CommunityMapAdapter(getContext(), mapList, map -> {
+            // Start the actual game here
+            Intent intent = new Intent(getActivity(), GameActivity.class);
+            // We pass the map name or ID so GameActivity knows what to load
+            intent.putExtra("SELECTED_MAP_NAME", map.getMapName());
+            startActivity(intent);
         });
+
+        rvCommunityMaps.setAdapter(adapter);
+        fetchCommunityMaps();
+    }
+
+    private void fetchCommunityMaps() {
+        // Querying the "community_maps" collection sorted by newest first
+        db.collection("community_maps")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        List<CommunityMap> fetchedMaps = queryDocumentSnapshots.toObjects(CommunityMap.class);
+                        mapList.clear();
+                        mapList.addAll(fetchedMaps);
+                        adapter.notifyDataSetChanged();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (isAdded()) {
+                        Toast.makeText(getContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Refresh the list whenever the user returns to this screen
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            fetchCommunityMaps();
+        }
     }
 }

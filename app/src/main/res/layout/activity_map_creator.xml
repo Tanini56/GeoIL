@@ -108,12 +108,81 @@
             android:textColor="@color/white"
             android:layout_marginBottom="8dp"/>
 
-        <Spinner
-            android:id="@+id/spinner_category"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select Map Theme Icon:"
+            android:layout_marginTop="16dp"/>
+
+        <HorizontalScrollView
             android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:background="@drawable/hint_background"
-            android:popupBackground="@color/primary"/>
+            android:layout_height="wrap_content"
+            android:padding="8dp">
+
+            <LinearLayout
+                android:id="@+id/icon_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/icon_beach"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/beach_icon"
+                    android:padding="8dp"
+                    android:layout_margin="4dp" />
+
+                <ImageView
+                    android:id="@+id/icon_city"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/city_icon"
+                    android:padding="8dp"
+                    android:layout_margin="4dp" />
+
+                <ImageView
+                    android:id="@+id/icon_desert"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/desert_icon"
+                    android:padding="8dp"
+                    android:layout_margin="4dp" />
+
+                <ImageView
+                    android:id="@+id/icon_farm"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/farm_icon"
+                    android:padding="8dp"
+                    android:layout_margin="4dp" />
+
+                <ImageView
+                    android:id="@+id/icon_grassland"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/grassland_icon"
+                    android:padding="8dp"
+                    android:layout_margin="4dp" />
+
+                <ImageView
+                    android:id="@+id/icon_lake"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/lake_icon"
+                    android:padding="8dp"
+                    android:layout_margin="4dp" />
+
+                <ImageView
+                    android:id="@+id/icon_mountain"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/mountain_icon"
+                    android:padding="8dp"
+                    android:layout_margin="4dp" />
+
+            </LinearLayout>
+        </HorizontalScrollView>
     </LinearLayout>
 
     <FrameLayout

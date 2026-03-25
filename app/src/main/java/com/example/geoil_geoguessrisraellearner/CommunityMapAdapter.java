@@ -38,30 +38,32 @@ public class CommunityMapAdapter extends RecyclerView.Adapter<CommunityMapAdapte
     public void onBindViewHolder(@NonNull MapViewHolder holder, int position) {
         CommunityMap currentMap = mapList.get(position);
 
-        // 1. Display the automated name (e.g., "Park HaYarkon (5 Rounds)")
         holder.tvMapName.setText(currentMap.getMapName());
+        holder.tvAuthor.setText("By: " + (currentMap.getAuthor() != null ? currentMap.getAuthor() : "Anonymous"));
 
-        // 2. Set the Author Name
-        holder.tvAuthor.setText("By: " + currentMap.getAuthor());
+        // 1. Get the icon name stored in Firestore (e.g., "desert_icon")
+        String iconResourceName = currentMap.getIconName();
 
-        // 3. Dynamic Icon Logic
-        // Takes category from DB (e.g., "beach") and looks for "beach_icon" in drawables
-        String category = currentMap.getCategory();
-        if (category != null) {
-            String iconFileName = category.toLowerCase() + "_icon";
+        // 2. If for some reason iconName is null, fallback to the category-based name
+        if (iconResourceName == null && currentMap.getCategory() != null) {
+            iconResourceName = currentMap.getCategory().toLowerCase() + "_icon";
+        }
 
-            // Look up the resource ID by string name
-            int resID = context.getResources().getIdentifier(iconFileName, "drawable", context.getPackageName());
+        if (iconResourceName != null) {
+            // 3. Look up the resource ID dynamically
+            int resID = context.getResources().getIdentifier(iconResourceName, "drawable", context.getPackageName());
 
             if (resID != 0) {
                 holder.imgCategoryIcon.setImageResource(resID);
             } else {
-                // Fallback icon if the specific category icon is missing
-                holder.imgCategoryIcon.setImageResource(android.R.drawable.ic_menu_mapmode);
+                // Fallback if the file is missing from your drawables folder
+                holder.imgCategoryIcon.setImageResource(R.drawable.city_icon);
             }
         }
 
-        holder.itemView.setOnClickListener(v -> listener.onMapClick(currentMap));
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) listener.onMapClick(currentMap);
+        });
     }
 
     @Override

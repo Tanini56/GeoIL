@@ -63,26 +63,34 @@ public class AccountFragment extends Fragment {
         FirebaseUser currentUser = mAuth.getCurrentUser();
 
         if (currentUser != null) {
-            // USER IS LOGGED IN
             guestView.setVisibility(View.GONE);
             loggedInView.setVisibility(View.VISIBLE);
 
+            // Set email immediately
             userEmailTxt.setText(currentUser.getEmail());
 
-            // Get Username from Firestore
+            // --- IMPROVED NAME LOGIC ---
+            // Step 1: Set a default name immediately (Email prefix)
+            String email = currentUser.getEmail();
+            String fallbackName = (email != null && email.contains("@")) ? email.split("@")[0] : "Explorer";
+            userNameTxt.setText(fallbackName);
+
+            // Step 2: Try to get a custom name from Firestore if it exists
             db.collection("users").document(currentUser.getUid()).get()
                     .addOnSuccessListener(documentSnapshot -> {
-                        if (documentSnapshot.exists()) {
-                            userNameTxt.setText(documentSnapshot.getString("username"));
+                        if (documentSnapshot.exists() && documentSnapshot.contains("username")) {
+                            String firestoreName = documentSnapshot.getString("username");
+                            if (firestoreName != null && !firestoreName.isEmpty()) {
+                                userNameTxt.setText(firestoreName);
+                            }
                         }
                     });
+            // ---------------------------
 
             logoutBtn.setOnClickListener(v -> handleLogout());
         } else {
-            // USER IS A GUEST
             guestView.setVisibility(View.VISIBLE);
             loggedInView.setVisibility(View.GONE);
-
             loginBtn.setOnClickListener(v -> {
                 startActivity(new Intent(getActivity(), LoginActivity.class));
             });
