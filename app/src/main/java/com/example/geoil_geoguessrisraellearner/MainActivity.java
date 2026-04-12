@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
 
         // --- DEBUG AUTO-START ---
         // This line skips the main screen and goes straight to the map
-        startActivity(new Intent(MainActivity.this, HomeActivity.class));
+       // startActivity(new Intent(MainActivity.this, HomeActivity.class));
         // ------------------------
     }
 }

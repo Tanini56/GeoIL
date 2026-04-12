@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <!-- ADD THIS: Required for Firebase and Google Sign-In -->
-    <uses-permission android:name="android.permission.INTERNET" />
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <queries>
         <package android:name="com.geoguessr.app" />
     </queries>
@@ -24,29 +24,37 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.GeoILGeoGuessrIsraelLearner"
         android:usesCleartextTraffic="true">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".CommunityGameActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
+
+        <activity
+            android:name=".HomeActivity"
+            android:exported="false" />
+
         <activity
             android:name=".MapCreatorActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".LoginActivity"
             android:exported="false" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyCZb-Hm4AEDEJLSp7HSOyUNkuK6xeMSTSk" />
 
-        <activity
-            android:name=".HomeActivity"
-            android:exported="false" /> <!-- Main Screen: This opens first -->
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity> <!-- Login Screen: Opened via Intent from MainActivity -->
-        <activity
-            android:name=".LoginActivity"
-            android:exported="false" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -57,5 +65,4 @@
                 android:resource="@xml/file_paths" />
         </provider>
     </application>
-
 </manifest>
