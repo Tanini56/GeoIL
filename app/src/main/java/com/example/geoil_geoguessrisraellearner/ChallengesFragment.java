@@ -160,7 +160,13 @@ public class ChallengesFragment extends Fragment {
                     officialMapList.clear();
                     for (com.google.firebase.firestore.DocumentSnapshot doc : queryDocumentSnapshots) {
                         // Create the object using data from Firestore
-                        OfficialMap map = new OfficialMap(doc.getString("mapName"), doc.getId());
+                        boolean moveEnabled = doc.contains("isMoveEnabled") ? doc.getBoolean("isMoveEnabled") : false;
+
+                        OfficialMap map = new OfficialMap(
+                                doc.getString("mapName"),
+                                doc.getId(),
+                                moveEnabled
+                        );
                         officialMapList.add(map);
                     }
                     officialAdapter.notifyDataSetChanged();

@@ -8,20 +8,32 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
+
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.OnStreetViewPanoramaReadyCallback;
 import com.google.android.gms.maps.StreetViewPanorama;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.SupportStreetViewPanoramaFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.StreetViewSource;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.firestore.FirebaseFirestore;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class CommunityGameActivity extends AppCompatActivity implements OnStreetViewPanoramaReadyCallback {
+// Added OnMapReadyCallback here
+public class CommunityGameActivity extends AppCompatActivity implements OnStreetViewPanoramaReadyCallback, OnMapReadyCallback {
 
     private StreetViewPanorama mStreetView;
     private TextView tvScore, tvRound, tvMapTitle, tvDifficulty;
@@ -30,8 +42,14 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
     private int currentRound = 1;
     private final int TOTAL_ROUNDS = 5;
     private int totalScore = 0;
+    private boolean canMove = false;
 
-    // List to hold the 5 locations from Firebase
+    private CardView guessMapContainer;
+    private boolean isMapVisible = false;
+    private GoogleMap mGuessMap;
+    private Marker userGuessMarker;
+    private final LatLng ISRAEL_CENTER = new LatLng(31.0461, 34.8516);
+
     private List<LatLng> gamePoints = new ArrayList<>();
 
     @Override
@@ -42,11 +60,17 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
         // 1. Initialize UI
         tvScore = findViewById(R.id.tv_game_score);
         tvRound = findViewById(R.id.tv_game_round);
-        tvMapTitle = findViewById(R.id.tv_map_title); // Add this to your XML if not there
-        tvDifficulty = findViewById(R.id.tv_difficulty); // Add this to your XML if not there
+        tvMapTitle = findViewById(R.id.tv_map_title);
+        tvDifficulty = findViewById(R.id.tv_difficulty);
 
         ImageButton btnSettings = findViewById(R.id.btn_game_settings);
-        FloatingActionButton btnMap = findViewById(R.id.btn_open_guess_map);
+        ImageButton btnReturn = findViewById(R.id.btn_return_to_start);
+        guessMapContainer = findViewById(R.id.guess_map_container);
+        FloatingActionButton btnOpenMap = findViewById(R.id.btn_open_guess_map);
+
+        // Mini-map Fragment
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.mini_map_fragment);
 
         // 2. Get Data from Intent
         String mapId = getIntent().getStringExtra("SELECTED_MAP_ID");
@@ -56,6 +80,10 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
             fetchOfficialMapData(mapId);
         }
 
+        if (mapFragment != null) {
+            mapFragment.getMapAsync(this);
+        }
+
         // 3. Initialize StreetView
         SupportStreetViewPanoramaFragment streetViewFragment = (SupportStreetViewPanoramaFragment)
                 getSupportFragmentManager().findFragmentById(R.id.game_streetview);
@@ -63,8 +91,45 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
             streetViewFragment.getStreetViewPanoramaAsync(this);
         }
 
+        // 4. Listeners
+        btnReturn.setOnClickListener(v -> {
+            if (mStreetView != null && !gamePoints.isEmpty()) {
+                LatLng startPoint = gamePoints.get(currentRound - 1);
+                mStreetView.setPosition(startPoint, 100, StreetViewSource.OUTDOOR);
+            }
+        });
+
+        btnOpenMap.setOnClickListener(v -> {
+            if (isMapVisible) {
+                // HIDE IT
+                guessMapContainer.animate().alpha(0f).setDuration(200).withEndAction(() -> {
+                    guessMapContainer.setVisibility(View.GONE);
+                });
+                btnOpenMap.setImageResource(R.drawable.ic_map);
+                isMapVisible = false;
+            } else {
+                // SHOW IT
+                guessMapContainer.setAlpha(0f);
+                guessMapContainer.setVisibility(View.VISIBLE);
+                guessMapContainer.animate().alpha(1f).setDuration(200);
+                btnOpenMap.setImageResource(android.R.drawable.ic_menu_close_clear_cancel);
+                isMapVisible = true;
+            }
+        });
+
         btnSettings.setOnClickListener(v -> showSettingsDialog());
-        btnMap.setOnClickListener(v -> openGuessMap());
+    }
+
+    @Override
+    public void onMapReady(@NonNull GoogleMap googleMap) {
+        mGuessMap = googleMap;
+        mGuessMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+        mGuessMap.moveCamera(CameraUpdateFactory.newLatLngZoom(ISRAEL_CENTER, 7.2f));
+
+        mGuessMap.setOnMapClickListener(latLng -> {
+            if (userGuessMarker != null) userGuessMarker.remove();
+            userGuessMarker = mGuessMap.addMarker(new MarkerOptions().position(latLng));
+        });
     }
 
     private void fetchOfficialMapData(String id) {
@@ -72,13 +137,17 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
-                        // Update UI Labels
+                        // 1. Get the movement flag
+                        Boolean moveFlag = documentSnapshot.getBoolean("isMoveEnabled");
+                        canMove = (moveFlag != null) ? moveFlag : false;
+
+                        // 2. Update Labels
                         String name = documentSnapshot.getString("mapName");
                         String diff = documentSnapshot.getString("difficulty");
                         if (name != null) tvMapTitle.setText(name);
                         if (diff != null) tvDifficulty.setText(diff);
 
-                        // Parse the Points Array
+                        // 3. Parse Points
                         List<Object> pointsRaw = (List<Object>) documentSnapshot.get("points");
                         if (pointsRaw != null) {
                             gamePoints.clear();
@@ -90,8 +159,13 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
                             }
                         }
 
-                        // Start first round if Panorama is already ready
-                        if (mStreetView != null && !gamePoints.isEmpty()) {
+                        // Apply move setting immediately if panorama is ready
+                        if (mStreetView != null) {
+                            mStreetView.setUserNavigationEnabled(canMove);
+                        }
+
+                        // Load round 1
+                        if (!gamePoints.isEmpty()) {
                             loadRound(1);
                         }
                     }
@@ -102,30 +176,22 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
     private void loadRound(int roundNumber) {
         if (gamePoints == null || gamePoints.isEmpty()) return;
 
-        if (roundNumber <= TOTAL_ROUNDS) {
-            tvRound.setText("ROUND: " + roundNumber + " / " + TOTAL_ROUNDS);
-            LatLng target = gamePoints.get(roundNumber - 1);
+        LatLng target = gamePoints.get(roundNumber - 1);
 
-            if (mStreetView != null) {
-                // Set position with OUTDOOR source to avoid being stuck inside shops
-                mStreetView.setPosition(target, 100, StreetViewSource.OUTDOOR);
-                mStreetView.setUserNavigationEnabled(false); // NO MOVING
-            }
-        } else {
-            Toast.makeText(this, "Game Over! Total Score: " + totalScore, Toast.LENGTH_LONG).show();
-            finish();
+        if (mStreetView != null) {
+            mStreetView.setPosition(target, 1000, StreetViewSource.OUTDOOR);
+            mStreetView.setUserNavigationEnabled(canMove);
+            mStreetView.setZoomGesturesEnabled(true);
+            mStreetView.setPanningGesturesEnabled(true);
         }
     }
 
     @Override
     public void onStreetViewPanoramaReady(StreetViewPanorama panorama) {
         mStreetView = panorama;
-        mStreetView.setUserNavigationEnabled(false);
-
-        // Initial UI setup
+        mStreetView.setUserNavigationEnabled(canMove);
         tvScore.setText("SCORE: " + totalScore);
 
-        // If Firebase data came in before the panorama was ready, load now
         if (!gamePoints.isEmpty()) {
             loadRound(currentRound);
         }
@@ -152,10 +218,5 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
         });
 
         dialog.show();
-    }
-
-    private void openGuessMap() {
-        // Next step: Implement the Fragment or Dialog where they place their marker
-        Toast.makeText(this, "Opening Guess Map...", Toast.LENGTH_SHORT).show();
     }
 }

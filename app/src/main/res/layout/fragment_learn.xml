@@ -13,7 +13,9 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center"
-        android:text="LEARN"
+        android:text="LEARNiig"
         android:textSize="28sp"
         android:textColor="@color/black"/>
+
+
 </FrameLayout>
