@@ -95,6 +95,16 @@
                 android:src="@drawable/ic_flag_return"
                 app:tint="#FFCC00" />
 
+            <ImageButton
+                android:id="@+id/btn_compass"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="16dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_compass"
+                app:tint="#FFFFFF" />
+
         </LinearLayout>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
