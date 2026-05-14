@@ -26,9 +26,5 @@ public class MainActivity extends AppCompatActivity {
         loginButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, LoginActivity.class)));
         guestButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, HomeActivity.class)));
 
-        // --- DEBUG AUTO-START ---
-        // This line skips the main screen and goes straight to the map
-       // startActivity(new Intent(MainActivity.this, HomeActivity.class));
-        // ------------------------
     }
 }

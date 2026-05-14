@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,6 +16,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import com.bumptech.glide.Glide;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.firebase.auth.FirebaseAuth;
@@ -44,11 +46,19 @@ import java.util.Map;
 // Added OnMapReadyCallback here
 public class CommunityGameActivity extends AppCompatActivity implements OnStreetViewPanoramaReadyCallback, OnMapReadyCallback {
 
+    private boolean isCommunityMode = false;
+    private List<String> communityImageUrls = new ArrayList<>();
+    private List<Map<String, Double>> communityLocations = new ArrayList<>();
+    private int totalRounds = 5; // Default
+
     private StreetViewPanorama mStreetView;
     private TextView tvScore, tvRound, tvMapTitle, tvDifficulty;
     private boolean isMusicOn = true;
     private List<LatLng> userGuesses = new ArrayList<>();
-
+    private LatLng currentTargetLatLng; // Added for distance calculation
+    private View streetViewLayout; // The FrameLayout/Fragment containing StreetView
+    private Button btnSubmitGuess; // Reference for the submit button
+    private TextView tvRoundIndicator; // Added to match the fetch logic
     private int currentRound = 1;
     private final int TOTAL_ROUNDS = 5;
     private int totalScore = 0;
@@ -58,6 +68,7 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
     private boolean isMapVisible = false;
     private GoogleMap mGuessMap;
     private Marker userGuessMarker;
+    private ImageView imgCommunityPhoto;
     private final LatLng ISRAEL_CENTER = new LatLng(31.0461, 34.8516);
 
     private List<LatLng> gamePoints = new ArrayList<>();
@@ -67,11 +78,15 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_community_game);
 
-        // 1. Initialize UI
+        // 1. Initialize UI Views
         tvScore = findViewById(R.id.tv_game_score);
         tvRound = findViewById(R.id.tv_game_round);
         tvMapTitle = findViewById(R.id.tv_map_title);
         tvDifficulty = findViewById(R.id.tv_difficulty);
+        imgCommunityPhoto = findViewById(R.id.img_community_photo);
+
+        // The container for your StreetView fragment (used for toggling visibility)
+        streetViewLayout = findViewById(R.id.game_streetview);
 
         ImageButton btnSettings = findViewById(R.id.btn_game_settings);
         ImageButton btnReturn = findViewById(R.id.btn_return_to_start);
@@ -79,73 +94,72 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
         FloatingActionButton btnOpenMap = findViewById(R.id.btn_open_guess_map);
         Button btnConfirm = findViewById(R.id.btn_confirm_guess);
 
-        // Mini-map Fragment
+        // 2. Initialize Map Fragments
+        // Mini-map for making guesses
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.mini_map_fragment);
-
-        // 2. Get Data from Intent
-        String mapId = getIntent().getStringExtra("SELECTED_MAP_ID");
-        boolean isOfficial = getIntent().getBooleanExtra("IS_OFFICIAL", false);
-
-        if (isOfficial && mapId != null) {
-            fetchOfficialMapData(mapId);
-        }
-
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
         }
 
-        // 3. Initialize StreetView
+        // StreetView fragment for official rounds
         SupportStreetViewPanoramaFragment streetViewFragment = (SupportStreetViewPanoramaFragment)
                 getSupportFragmentManager().findFragmentById(R.id.game_streetview);
         if (streetViewFragment != null) {
             streetViewFragment.getStreetViewPanoramaAsync(this);
         }
 
-        // 4. Listeners
+        // 3. Handle Map Selection Logic
+        String mapId = getIntent().getStringExtra("SELECTED_MAP_ID");
+        boolean isOfficial = getIntent().getBooleanExtra("IS_OFFICIAL", false);
+
+        if (mapId != null) {
+            if (isOfficial) {
+                fetchOfficialMapData(mapId); // Fetch logic from "official_maps"
+            } else {
+                fetchCommunityMapData(mapId); // Fetch logic from "community_maps"
+            }
+        }
+
+        // 4. Click Listeners
         btnReturn.setOnClickListener(v -> {
-            if (mStreetView != null && !gamePoints.isEmpty()) {
-                LatLng startPoint = gamePoints.get(currentRound - 1);
-                mStreetView.setPosition(startPoint, 100, StreetViewSource.OUTDOOR);
+            // Returns the view to the current round's starting coordinates
+            if (currentTargetLatLng != null) {
+                if (isCommunityMode) {
+                    // For community mode, we just reset the ImageView zoom/position if needed
+                    Toast.makeText(this, "Resetting view...", Toast.LENGTH_SHORT).show();
+                } else if (mStreetView != null) {
+                    mStreetView.setPosition(currentTargetLatLng, 100, StreetViewSource.OUTDOOR);
+                }
             }
         });
 
         btnConfirm.setOnClickListener(v -> {
-            // 1. ALWAYS check for null first!
             if (userGuessMarker == null) {
                 Toast.makeText(this, "Please place a pin on the map first!", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // 2. Now that we know it's not null, save the guess to our list
+            // Save guess and calculate results using the universal currentTargetLatLng
             userGuesses.add(userGuessMarker.getPosition());
-
-            // 3. Get positions
             LatLng userPos = userGuessMarker.getPosition();
-            LatLng actualPos = gamePoints.get(currentRound - 1);
+            LatLng actualPos = currentTargetLatLng;
 
-            // 4. Calculate Distance
             float[] results = new float[1];
             android.location.Location.distanceBetween(
                     userPos.latitude, userPos.longitude,
                     actualPos.latitude, actualPos.longitude,
                     results
             );
-            float distanceInMeters = results[0];
 
-            // 5. Calculate and add to total
+            float distanceInMeters = results[0];
             int roundScore = calculateScore(distanceInMeters);
             totalScore += roundScore;
 
-            // 6. Update UI
+            // Update UI and show results
             tvScore.setText("SCORE: " + totalScore);
-
-            // 7. Reset UI for results
             guessMapContainer.setVisibility(View.GONE);
             isMapVisible = false;
-
-            // Switch the icon back to the map icon immediately
-            //FloatingActionButton btnOpenMap = findViewById(R.id.btn_open_guess_map);
             btnOpenMap.setImageResource(R.drawable.ic_map);
 
             showRoundResultDialog(roundScore, (int) distanceInMeters);
@@ -153,14 +167,12 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
 
         btnOpenMap.setOnClickListener(v -> {
             if (isMapVisible) {
-                // HIDE IT
                 guessMapContainer.animate().alpha(0f).setDuration(200).withEndAction(() -> {
                     guessMapContainer.setVisibility(View.GONE);
                 });
                 btnOpenMap.setImageResource(R.drawable.ic_map);
                 isMapVisible = false;
             } else {
-                // SHOW IT
                 guessMapContainer.setAlpha(0f);
                 guessMapContainer.setVisibility(View.VISIBLE);
                 guessMapContainer.animate().alpha(1f).setDuration(200);
@@ -185,21 +197,17 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
     }
 
     private void fetchOfficialMapData(String id) {
+        isCommunityMode = false;
         FirebaseFirestore.getInstance().collection("official_maps").document(id)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
-                        // 1. Get the movement flag
                         Boolean moveFlag = documentSnapshot.getBoolean("isMoveEnabled");
                         canMove = (moveFlag != null) ? moveFlag : false;
 
-                        // 2. Update Labels
                         String name = documentSnapshot.getString("mapName");
-                        String diff = documentSnapshot.getString("difficulty");
                         if (name != null) tvMapTitle.setText(name);
-                        if (diff != null) tvDifficulty.setText(diff);
 
-                        // 3. Parse Points
                         List<Object> pointsRaw = (List<Object>) documentSnapshot.get("points");
                         if (pointsRaw != null) {
                             gamePoints.clear();
@@ -209,15 +217,7 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
                                 double lng = ((Number) pointData.get("lng")).doubleValue();
                                 gamePoints.add(new LatLng(lat, lng));
                             }
-                        }
-
-                        // Apply move setting immediately if panorama is ready
-                        if (mStreetView != null) {
-                            mStreetView.setUserNavigationEnabled(canMove);
-                        }
-
-                        // Load round 1
-                        if (!gamePoints.isEmpty()) {
+                            totalRounds = gamePoints.size();
                             loadRound(1);
                         }
                     }
@@ -225,19 +225,67 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
                 .addOnFailureListener(e -> Toast.makeText(this, "Error loading map", Toast.LENGTH_SHORT).show());
     }
 
+    private void fetchCommunityMapData(String id) {
+        isCommunityMode = true;
+        canMove = false; // Community images are static
+
+        FirebaseFirestore.getInstance().collection("community_maps").document(id)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String name = documentSnapshot.getString("mapName");
+                        if (name != null) tvMapTitle.setText(name);
+                        tvDifficulty.setText("Community");
+
+                        // Parse data as seen in image_39d1f5.png
+                        communityImageUrls = (List<String>) documentSnapshot.get("imageUrls");
+                        communityLocations = (List<Map<String, Double>>) documentSnapshot.get("locations");
+
+                        if (communityLocations != null && !communityLocations.isEmpty()) {
+                            totalRounds = communityLocations.size();
+                            loadRound(1);
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "Error loading community map", Toast.LENGTH_SHORT).show());
+    }
+
     private void loadRound(int roundNumber) {
-        if (gamePoints == null || gamePoints.isEmpty()) return;
-
-        LatLng target = gamePoints.get(roundNumber - 1);
-
-        resetGuessMap();
-
-        if (mStreetView != null) {
-            mStreetView.setPosition(target, 1000, StreetViewSource.OUTDOOR);
-            mStreetView.setUserNavigationEnabled(canMove);
-            mStreetView.setZoomGesturesEnabled(true);
-            mStreetView.setPanningGesturesEnabled(true);
+        // 1. Get the target coordinates for this round
+        LatLng roundLatLng;
+        if (isCommunityMode) {
+            // Parsing the structure from image_39d1f5.png
+            Map<String, Double> loc = communityLocations.get(roundNumber - 1);
+            roundLatLng = new LatLng(loc.get("lat"), loc.get("lng"));
+        } else {
+            roundLatLng = gamePoints.get(roundNumber - 1);
         }
+
+        currentTargetLatLng = roundLatLng;
+
+        // 2. Display logic (Hybrid Toggle)
+        if (isCommunityMode) {
+            // Hide StreetView, Show ImageView
+            if (streetViewLayout != null) streetViewLayout.setVisibility(View.GONE);
+            imgCommunityPhoto.setVisibility(View.VISIBLE);
+
+            String imageUrl = communityImageUrls.get(roundNumber - 1);
+            Glide.with(this)
+                    .load(imageUrl)
+                    .centerCrop()
+                    .into(imgCommunityPhoto);
+        } else {
+            // Show StreetView, Hide ImageView
+            imgCommunityPhoto.setVisibility(View.GONE);
+            if (streetViewLayout != null) streetViewLayout.setVisibility(View.VISIBLE);
+
+            if (mStreetView != null) {
+                mStreetView.setPosition(roundLatLng, 100);
+                mStreetView.setUserNavigationEnabled(canMove);
+            }
+        }
+
+        tvRound.setText("ROUND: " + roundNumber + " / " + totalRounds);
     }
 
     @Override

@@ -9,25 +9,35 @@
         android:src="@drawable/back1"
         android:scaleType="centerCrop" />
 
+    <!-- LOGGED IN VIEW: Leaderboard List -->
     <LinearLayout
         android:id="@+id/leaderboard_content_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="24dp"
+        android:background="@drawable/login_card_background"
         android:orientation="vertical"
+        android:padding="24dp"
         android:visibility="gone">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="LEADERBOARD"
-            android:textSize="28sp"
+            android:text="ALL TIME LEADERBOARD"
+            android:textSize="24sp"
             android:textColor="@color/white"
             android:gravity="center"
-            android:layout_marginTop="20dp"
             android:textStyle="bold|italic"/>
 
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/leaderboard_recycler"
+            android:layout_width="match_parent"
+            android:layout_height="350dp"
+            android:layout_marginTop="12dp"/>
     </LinearLayout>
 
+    <!-- GUEST VIEW: Login Prompt -->
     <LinearLayout
         android:id="@+id/guest_view"
         android:layout_width="match_parent"
@@ -63,8 +73,6 @@
             android:layout_marginTop="20dp"
             android:text="LOG IN"
             android:textColor="@color/white"
-            android:backgroundTint="@color/primary"
-            android:fontFamily="@font/geofont"/>
+            android:backgroundTint="@color/primary"/>
     </LinearLayout>
-
 </FrameLayout>

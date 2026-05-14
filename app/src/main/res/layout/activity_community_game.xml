@@ -5,11 +5,26 @@
     android:layout_height="match_parent"
     android:background="#000000">
 
+    <ImageView
+        android:id="@+id/img_community_location"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
     <fragment
         android:id="@+id/game_streetview"
         android:name="com.google.android.gms.maps.SupportStreetViewPanoramaFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
+    <!-- NEW: ImageView for Community Photos -->
+    <ImageView
+        android:id="@+id/img_community_photo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
 
     <ImageButton
         android:id="@+id/btn_game_settings"
@@ -92,7 +107,7 @@
                 android:layout_marginStart="16dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:scaleType="centerInside"
-                android:src="@drawable/ic_flag_return"
+                android:src="@drawable/ic_return_flag"
                 app:tint="#FFCC00" />
 
             <ImageButton
