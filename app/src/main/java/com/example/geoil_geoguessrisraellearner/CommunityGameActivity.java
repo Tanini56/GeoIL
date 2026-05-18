@@ -322,19 +322,15 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
     }
 
     private void showRoundResultDialog(int score, int distanceMeters) {
-        // 1. Inflate our custom layout
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_round_result, null);
 
-        // 2. Create the dialog with the transparent style
         AlertDialog dialog = new AlertDialog.Builder(this, R.style.TransparentDialog)
                 .setView(dialogView)
-                .setCancelable(false) // Force them to click "Next"
+                .setCancelable(false)
                 .create();
 
-        // 3. SHOW the dialog first
         dialog.show();
 
-        // 4. FORCE BIG SIZE (Match Parent)
         if (dialog.getWindow() != null) {
             dialog.getWindow().setLayout(
                     android.view.ViewGroup.LayoutParams.MATCH_PARENT,
@@ -342,29 +338,27 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
             );
         }
 
-        // 5. Link UI Elements
         TextView tvResScore = dialogView.findViewById(R.id.result_score_text);
         TextView tvResDist = dialogView.findViewById(R.id.result_distance_text);
         Button btnNext = dialogView.findViewById(R.id.btn_next_round);
 
         tvResScore.setText("+" + score);
 
-        // Nicer distance formatting (show meters if close, km if far)
         if (distanceMeters < 1000) {
             tvResDist.setText("Distance: " + distanceMeters + "m");
         } else {
             tvResDist.setText(String.format("Distance: %.2f km", distanceMeters / 1000.0));
         }
 
-        // 6. Initialize the Result Map
         SupportMapFragment resultMapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.result_mini_map);
 
         if (resultMapFragment != null) {
             resultMapFragment.getMapAsync(googleMap -> {
-                // Get positions
                 LatLng userPos = userGuessMarker.getPosition();
-                LatLng actualPos = gamePoints.get(currentRound - 1);
+
+                // FIXED: Uses the active round target directly so it handles images or streetview safely
+                LatLng actualPos = currentTargetLatLng;
 
                 // Red Pin (User)
                 googleMap.addMarker(new MarkerOptions()
@@ -376,26 +370,22 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
                         .position(actualPos)
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
 
-                // Draw the line (Classic White Line)
+                // Connect Pins
                 googleMap.addPolyline(new PolylineOptions()
                         .add(userPos, actualPos)
                         .width(8)
                         .color(android.graphics.Color.WHITE));
 
-                // Zoom camera to fit both pins
                 LatLngBounds.Builder builder = new LatLngBounds.Builder();
                 builder.include(userPos);
                 builder.include(actualPos);
                 LatLngBounds bounds = builder.build();
 
-                // Use 150dp padding so pins aren't touching the edge of the map
                 googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 150));
             });
         }
 
-        // 7. Button Logic
         btnNext.setOnClickListener(v -> {
-            // CLEANUP: Very important for SupportMapFragment in Dialogs
             if (resultMapFragment != null) {
                 getSupportFragmentManager().beginTransaction().remove(resultMapFragment).commit();
             }
@@ -443,12 +433,22 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
         if (summaryMapFragment != null) {
             summaryMapFragment.getMapAsync(googleMap -> {
                 LatLngBounds.Builder builder = new LatLngBounds.Builder();
+                boolean hasValidGuesses = false;
 
-                for (int i = 0; i < gamePoints.size(); i++) {
-                    LatLng actual = gamePoints.get(i);
+                // FIXED: Loops based on flexible totalRounds count (handles 1 or 5 maps dynamically)
+                for (int i = 0; i < totalRounds; i++) {
+                    LatLng actual;
+                    if (isCommunityMode) {
+                        Map<String, Double> loc = communityLocations.get(i);
+                        actual = new LatLng(loc.get("lat"), loc.get("lng"));
+                    } else {
+                        actual = gamePoints.get(i);
+                    }
+
                     LatLng guess = (i < userGuesses.size()) ? userGuesses.get(i) : null;
 
                     if (guess != null) {
+                        hasValidGuesses = true;
                         // Actual Location (Yellow)
                         googleMap.addMarker(new MarkerOptions()
                                 .position(actual)
@@ -459,30 +459,31 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
                                 .position(guess)
                                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
 
-                        // Connect them with a thin gray line
+                        // Connect them
                         googleMap.addPolyline(new PolylineOptions()
                                 .add(actual, guess)
                                 .width(4)
-                                .color(Color.parseColor("#80FFFFFF"))); // Semi-transparent white
+                                .color(Color.parseColor("#80FFFFFF")));
 
                         builder.include(actual);
                         builder.include(guess);
                     }
                 }
 
-                // Zoom to fit all 10 pins
-                googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), 150));
+                if (hasValidGuesses) {
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), 150));
+                } else {
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(ISRAEL_CENTER, 7.2f));
+                }
             });
         }
 
         btnFinish.setOnClickListener(v -> {
-            // 1. Save the score before leaving
             String mapId = getIntent().getStringExtra("SELECTED_MAP_ID");
             if (mapId != null) {
                 saveHighScore(mapId, totalScore);
             }
 
-            // 2. Cleanup fragments
             if (summaryMapFragment != null) {
                 getSupportFragmentManager().beginTransaction().remove(summaryMapFragment).commit();
             }
@@ -492,21 +493,19 @@ public class CommunityGameActivity extends AppCompatActivity implements OnStreet
     }
 
     private void prepareNextRound() {
-        if (currentRound < TOTAL_ROUNDS) {
+        // FIXED: Checks against global totalRounds bounds instead of hardcoded 5
+        if (currentRound < totalRounds) {
             currentRound++;
-            tvRound.setText("ROUND: " + currentRound + " / " + TOTAL_ROUNDS);
+            tvRound.setText("ROUND: " + currentRound + " / " + totalRounds);
 
-            // --- RESET UI STATE FOR NEW ROUND ---
             isMapVisible = false;
             guessMapContainer.setVisibility(View.GONE);
 
-            // Find your FAB and reset the icon to the map icon
             FloatingActionButton btnOpenMap = findViewById(R.id.btn_open_guess_map);
             btnOpenMap.setImageResource(R.drawable.ic_map);
 
             loadRound(currentRound);
 
-            // Clear the previous guess marker
             if (userGuessMarker != null) userGuessMarker.remove();
             userGuessMarker = null;
         } else {

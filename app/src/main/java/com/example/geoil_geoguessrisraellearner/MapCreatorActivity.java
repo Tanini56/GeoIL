@@ -323,9 +323,11 @@ public class MapCreatorActivity extends AppCompatActivity implements OnMapReadyC
         mapData.put("mapName", name);
         mapData.put("category", cat);
         mapData.put("iconName", icon);
-        mapData.put("author", authorName); // Now saves the Username/Prefix
+        mapData.put("author", authorName); // Saves the Username/Prefix
         mapData.put("imageUrls", urls);
-        mapData.put("timestamp", System.currentTimeMillis());
+
+        // UPDATED: Replaced local millis with proper Firebase Server Timestamp
+        mapData.put("timestamp", com.google.firebase.firestore.FieldValue.serverTimestamp());
 
         // Convert LatLng list to a format Firestore understands
         List<Map<String, Double>> locationData = new ArrayList<>();

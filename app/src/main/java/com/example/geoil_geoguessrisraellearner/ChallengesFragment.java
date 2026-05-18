@@ -79,7 +79,7 @@ public class ChallengesFragment extends Fragment {
         btnCreateMap = view.findViewById(R.id.btn_create_map);
         rvCommunityMaps = view.findViewById(R.id.rv_community_maps);
         rvOfficialMaps = view.findViewById(R.id.rv_official_maps); // Initialize this!
-        searchView = view.findViewById(R.id.search_view_community);
+        //searchView = view.findViewById(R.id.search_view_community);
         MaterialButtonToggleGroup toggleGroup = view.findViewById(R.id.toggleGroup);
 
         // 2. Check Login State
@@ -142,11 +142,9 @@ public class ChallengesFragment extends Fragment {
         mapList = new ArrayList<>();
         rvCommunityMaps.setLayoutManager(new LinearLayoutManager(getContext()));
 
+        // This interface click loop can stay empty now since the adapter handles everything!
         adapter = new CommunityMapAdapter(getContext(), mapList, map -> {
-            Intent intent = new Intent(getActivity(), CommunityGameActivity.class);
-            intent.putExtra("SELECTED_MAP_NAME", map.getMapName());
-            intent.putExtra("IS_OFFICIAL", false); // Community map
-            startActivity(intent);
+            // Safe to leave empty, or you can delete the code lines inside this block
         });
 
         rvCommunityMaps.setAdapter(adapter);
@@ -177,11 +175,11 @@ public class ChallengesFragment extends Fragment {
     }
 
     private void fetchCommunityMaps() {
+        // FIXED: Query the entire collection block, not a single document reference
         db.collection("community_maps")
-                .orderBy("timestamp", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    if (!queryDocumentSnapshots.isEmpty()) {
+                    if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
                         List<CommunityMap> fetchedMaps = queryDocumentSnapshots.toObjects(CommunityMap.class);
                         mapList.clear();
                         mapList.addAll(fetchedMaps);

@@ -1,6 +1,7 @@
 package com.example.geoil_geoguessrisraellearner;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +17,7 @@ public class CommunityMapAdapter extends RecyclerView.Adapter<CommunityMapAdapte
     private List<CommunityMap> mapList;
     private OnMapClickListener listener;
 
+    // Kept the interface here in case other parts of your app look for it during compilation
     public interface OnMapClickListener {
         void onMapClick(CommunityMap map);
     }
@@ -29,7 +31,6 @@ public class CommunityMapAdapter extends RecyclerView.Adapter<CommunityMapAdapte
     @NonNull
     @Override
     public MapViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // Ensure this matches your XML file name for the list item
         View view = LayoutInflater.from(context).inflate(R.layout.item_community_map, parent, false);
         return new MapViewHolder(view);
     }
@@ -44,25 +45,31 @@ public class CommunityMapAdapter extends RecyclerView.Adapter<CommunityMapAdapte
         // 1. Get the icon name stored in Firestore (e.g., "desert_icon")
         String iconResourceName = currentMap.getIconName();
 
-        // 2. If for some reason iconName is null, fallback to the category-based name
+        // 2. Fallback to category name if specific icon metadata is missing
         if (iconResourceName == null && currentMap.getCategory() != null) {
             iconResourceName = currentMap.getCategory().toLowerCase() + "_icon";
         }
 
         if (iconResourceName != null) {
-            // 3. Look up the resource ID dynamically
+            // 3. Look up the drawable resource ID dynamically
             int resID = context.getResources().getIdentifier(iconResourceName, "drawable", context.getPackageName());
 
             if (resID != 0) {
                 holder.imgCategoryIcon.setImageResource(resID);
             } else {
-                // Fallback if the file is missing from your drawables folder
+                // Default fallback image if an asset goes missing
                 holder.imgCategoryIcon.setImageResource(R.drawable.city_icon);
             }
         }
 
+        // DIRECT NAVIGATION ROUTING: Completely skips hybrid interface blocks
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) listener.onMapClick(currentMap);
+            Intent intent = new Intent(context, NewCommunityGameActivity.class);
+
+            // Passing the Map Name as the ID identifier to pull the specific document from Firestore
+            intent.putExtra("SELECTED_MAP_ID", currentMap.getMapId());
+
+            context.startActivity(intent);
         });
     }
 

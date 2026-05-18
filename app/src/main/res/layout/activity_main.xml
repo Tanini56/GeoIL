@@ -24,15 +24,10 @@
         android:padding="24dp">
 
         <!-- App Title (optional but recommended) -->
-        <TextView
-            android:id="@+id/appTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="GeoIL"
-            android:textSize="36sp"
-            android:textColor="@color/white"
-            android:fontFamily="@font/geofont"
-            android:layout_marginBottom="40dp" />
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="214dp"
+            android:src="@drawable/geoil" />
 
         <!-- Login Button -->
         <Button
